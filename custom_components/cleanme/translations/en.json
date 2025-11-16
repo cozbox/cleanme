@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CleanMe – Add tidy zone",
+        "description": "Configure a room/area that CleanMe will analyse using your camera and an AI vision model."
+      }
+    },
+    "error": {},
+    "abort": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CleanMe – Options",
+        "description": "Update settings for this CleanMe tidy zone."
+      }
+    }
+  }
+}
