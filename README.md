@@ -14,3 +14,13 @@ CleanMe is a Home Assistant custom integration that:
 
 
 See `custom_components/cleanme` for the integration code.
+
+## Installation
+
+### HACS (Custom Repository)
+- In HACS, add this repository as a **Custom Repository** with category **Integration**.
+- Install the integration, then restart Home Assistant so the new components load.
+
+### Manual
+- Copy the `custom_components/cleanme` folder into your Home Assistant `custom_components` directory.
+- Restart Home Assistant after copying so the integration is discovered.
