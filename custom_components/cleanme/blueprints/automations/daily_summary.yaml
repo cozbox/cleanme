@@ -1,0 +1,47 @@
+blueprint:
+  name: CleanMe Daily Tidy Summary
+  description: Send a daily summary of all tidy zones at a specified time
+  domain: automation
+  input:
+    notification_time:
+      name: Notification time
+      description: What time to send the daily summary
+      default: "21:00:00"
+      selector:
+        time:
+    notification_service:
+      name: Notification service
+      description: The notification service to use (e.g., notify.mobile_app_phone)
+      default: notify.persistent_notification
+      selector:
+        text:
+
+trigger:
+  - platform: time
+    at: !input notification_time
+
+action:
+  - service: !input notification_service
+    data:
+      title: "🏠 Daily Tidy Summary"
+      message: >
+        {% set zones = integration_entities('cleanme') | select('match', '.*_tidy$') | list %}
+        {% set tidy_count = zones | select('is_state', 'on') | list | count %}
+        {% set messy_count = zones | select('is_state', 'off') | list | count %}
+        
+        **Tidy Zones:** {{ tidy_count }}
+        **Needs Attention:** {{ messy_count }}
+        
+        {% for entity in zones %}
+        {% set zone_name = state_attr(entity, 'friendly_name') | replace(' Tidy', '') %}
+        {% set tasks_entity = entity | replace('binary_sensor.', 'sensor.') | replace('_tidy', '_tasks') %}
+        {% set task_count = states(tasks_entity) | int %}
+        {% if is_state(entity, 'off') %}
+        
+        ❌ **{{ zone_name }}** - {{ task_count }} task(s)
+        {% else %}
+        ✅ **{{ zone_name }}** - All tidy!
+        {% endif %}
+        {% endfor %}
+
+mode: single

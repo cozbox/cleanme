@@ -1,0 +1,69 @@
+blueprint:
+  name: CleanMe Room Got Messy Alert
+  description: Send notification when a room changes from tidy to messy
+  domain: automation
+  input:
+    notification_service:
+      name: Notification service
+      description: The notification service to use (e.g., notify.mobile_app_phone)
+      default: notify.persistent_notification
+      selector:
+        text:
+    quiet_hours_start:
+      name: Quiet hours start
+      description: Don't send notifications before this time
+      default: "08:00:00"
+      selector:
+        time:
+    quiet_hours_end:
+      name: Quiet hours end
+      description: Don't send notifications after this time
+      default: "22:00:00"
+      selector:
+        time:
+
+trigger:
+  - platform: state
+    entity_id: !input zone_binary_sensor
+    from: "on"
+    to: "off"
+
+condition:
+  - condition: time
+    after: !input quiet_hours_start
+    before: !input quiet_hours_end
+
+action:
+  - service: !input notification_service
+    data:
+      title: "🧹 Room Needs Tidying"
+      message: >
+        {% set zone_name = state_attr(trigger.entity_id, 'friendly_name') | replace(' Tidy', '') %}
+        {% set tasks_entity = trigger.entity_id | replace('binary_sensor.', 'sensor.') | replace('_tidy', '_tasks') %}
+        {% set tasks = state_attr(tasks_entity, 'tasks') %}
+        {% set comment = state_attr(tasks_entity, 'comment') %}
+        
+        **{{ zone_name }}** could use some attention!
+        
+        {% if comment %}
+        💬 {{ comment }}
+        {% endif %}
+        
+        {% if tasks %}
+        
+        **Tasks:**
+        {% for task in tasks %}
+        - {{ task }}
+        {% endfor %}
+        {% endif %}
+      data:
+        actions:
+          - action: "CLEANME_SNOOZE"
+            title: "Snooze 1hr"
+          - action: "CLEANME_DONE"
+            title: "Mark Done"
+
+mode: single
+
+# Note: To use this blueprint, you need to manually specify the zone_binary_sensor
+# in the blueprint input when creating the automation
