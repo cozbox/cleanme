@@ -10,6 +10,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import aiohttp_client
+from homeassistant.helpers import selector
 
 from .const import (
     DOMAIN,
@@ -42,19 +43,26 @@ class CleanMeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
+                LOGGER.info("CleanMe: Starting config flow validation for zone '%s'", user_input.get(CONF_NAME))
+                
                 # Validate API key
                 api_key = user_input[CONF_API_KEY]
                 session = aiohttp_client.async_get_clientsession(self.hass)
                 client = GeminiClient(api_key)
 
+                LOGGER.info("CleanMe: Validating Gemini API key...")
                 is_valid = await client.validate_api_key(session)
                 if not is_valid:
+                    LOGGER.error("CleanMe: API key validation failed")
                     errors["base"] = "invalid_api_key"
                 else:
+                    LOGGER.info("CleanMe: API key validated successfully")
                     name = user_input[CONF_NAME]
                     await self.async_set_unique_id(f"{DOMAIN}_{name.lower().replace(' ', '_')}")
                     self._abort_if_unique_id_configured()
 
+                    LOGGER.info("CleanMe: Creating config entry for zone '%s' with camera '%s'", 
+                               name, user_input.get(CONF_CAMERA_ENTITY))
                     return self.async_create_entry(
                         title=name,
                         data=user_input,
@@ -66,7 +74,9 @@ class CleanMeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_NAME): str,
-                vol.Required(CONF_CAMERA_ENTITY): cv.entity_id,
+                vol.Required(CONF_CAMERA_ENTITY): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="camera")
+                ),
                 vol.Required(CONF_PERSONALITY, default=PERSONALITY_THOROUGH): vol.In(
                     list(PERSONALITY_OPTIONS.keys())
                 ),
@@ -107,17 +117,23 @@ class CleanMeOptionsFlow(config_entries.OptionsFlow):
 
         if user_input is not None:
             try:
+                LOGGER.info("CleanMe: Updating options for zone '%s'", user_input.get(CONF_NAME))
+                
                 # Validate API key if changed
                 api_key = user_input[CONF_API_KEY]
                 old_api_key = self._entry.data.get(CONF_API_KEY, "")
 
                 if api_key != old_api_key:
+                    LOGGER.info("CleanMe: API key changed, validating new key...")
                     session = aiohttp_client.async_get_clientsession(self.hass)
                     client = GeminiClient(api_key)
 
                     is_valid = await client.validate_api_key(session)
                     if not is_valid:
+                        LOGGER.error("CleanMe: New API key validation failed")
                         errors["base"] = "invalid_api_key"
+                    else:
+                        LOGGER.info("CleanMe: New API key validated successfully")
 
                 if not errors:
                     # Update the config entry data
@@ -126,6 +142,7 @@ class CleanMeOptionsFlow(config_entries.OptionsFlow):
                         data={**self._entry.data, **user_input}
                     )
                     # Trigger reload of the entry to apply changes
+                    LOGGER.info("CleanMe: Reloading config entry to apply changes")
                     await self.hass.config_entries.async_reload(self._entry.entry_id)
                     return self.async_abort(reason="reconfigure_successful")
             except Exception as err:
@@ -140,7 +157,9 @@ class CleanMeOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_CAMERA_ENTITY,
                     default=data.get(CONF_CAMERA_ENTITY, ""),
-                ): cv.entity_id,
+                ): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="camera")
+                ),
                 vol.Required(
                     CONF_PERSONALITY,
                     default=data.get(CONF_PERSONALITY, PERSONALITY_THOROUGH),
