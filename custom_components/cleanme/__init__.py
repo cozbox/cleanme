@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 import logging
 
 import voluptuous as vol
@@ -62,9 +62,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     LOGGER.info("CleanMe: Registering dashboard for zone '%s'", entry.title)
     try:
         dashboard_config = cleanme_dashboard.generate_dashboard_config(hass)
-        # Ensure domain data is initialized before storing dashboard config
-        if DOMAIN not in hass.data:
-            hass.data[DOMAIN] = {}
         hass.data[DOMAIN]["dashboard_config"] = dashboard_config
         LOGGER.info("CleanMe: Dashboard generated with %d cards", len(dashboard_config.get("cards", [])))
     except Exception as e:
@@ -90,9 +87,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Regenerate dashboard when zones change
         try:
             dashboard_config = cleanme_dashboard.generate_dashboard_config(hass)
-            # Ensure domain data is initialized before storing dashboard config
-            if DOMAIN not in hass.data:
-                hass.data[DOMAIN] = {}
             hass.data[DOMAIN]["dashboard_config"] = dashboard_config
             LOGGER.info("CleanMe: Dashboard updated after zone removal")
         except Exception as e:
