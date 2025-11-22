@@ -2,11 +2,11 @@
 
 **Transform your Home Assistant into an intelligent home cleaning assistant!**
 
-CleanMe uses Google's Gemini 3 Pro Preview AI to analyze camera snapshots of your rooms and provide actionable tidying checklists. It's like having a helpful (and configurable) housemate who keeps an eye on your spaces.
+CleanMe uses Google's Gemini AI to analyze camera snapshots of your rooms and provide actionable tidying checklists. It's like having a helpful (and configurable) housemate who keeps an eye on your spaces.
 
 ## 🌟 Features
 
-- 🤖 **Gemini 3 Pro Preview Integration** - Cutting-edge AI with Deep Think mode for accurate room analysis
+- 🤖 **Gemini AI Integration** - Advanced vision AI for accurate room analysis
 - 🎭 **5 AI Personalities** - Choose how your AI "judges" your space (Chill, Thorough, Strict, Sarcastic, Professional)
 - 🎚️ **Adjustable Pickiness** - 1-5 scale from lenient to perfectionist
 - 📸 **Camera Integration** - Works with any Home Assistant camera entity
@@ -54,7 +54,7 @@ CleanMe uses Google's Gemini 3 Pro Preview AI to analyze camera snapshots of you
 3. Click **Create API Key**
 4. Copy your key (keep it secure!)
 
-**Cost Note:** Gemini 3 Pro Preview has generous free tier limits. Typical usage for home monitoring is well within free limits.
+**Cost Note:** Gemini API has generous free tier limits. Typical usage for home monitoring is well within free limits.
 
 ### 2. Add Your First Zone
 
@@ -297,7 +297,7 @@ Import these via **Settings** → **Automations & Scenes** → **Blueprints** �
 
 ## 💰 Cost Estimates
 
-Gemini 3 Pro Preview pricing (subject to change):
+Gemini API pricing (subject to change):
 - **Free tier**: Very generous limits for personal use
 - Typical home usage: 2-4 checks/day × 3 rooms = **6-12 requests/day**
 - Well within free tier limits for most users
@@ -325,7 +325,7 @@ MIT License - see [LICENSE](LICENSE) file
 ## 🙏 Credits
 
 - Built with ❤️ by [@cozbox](https://github.com/cozbox)
-- Powered by Google Gemini 3 Pro Preview
+- Powered by Google Gemini AI
 - Inspired by the Home Assistant community
 
 ## 📞 Support

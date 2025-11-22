@@ -1,4 +1,9 @@
-"""Gemini 3 Pro Preview API client for CleanMe."""
+"""Gemini API client for CleanMe.
+
+Uses Google's Gemini 2.0 Flash Experimental model for fast, accurate
+vision analysis of room images. Supports configurable personalities and
+pickiness levels for customized tidiness assessments.
+"""
 from __future__ import annotations
 
 import base64
@@ -19,7 +24,7 @@ class GeminiClientError(Exception):
 
 
 class GeminiClient:
-    """Client for Gemini 3 Pro Preview API with Deep Think mode."""
+    """Client for Gemini API with vision capabilities."""
 
     def __init__(self, api_key: str) -> None:
         """Initialize Gemini client."""
@@ -34,7 +39,7 @@ class GeminiClient:
         pickiness: int,
     ) -> Dict[str, Any]:
         """
-        Analyze room image using Gemini 3 Pro Preview.
+        Analyze room image using Gemini vision model.
         
         Returns dict with:
         - tidy: bool
@@ -75,8 +80,6 @@ class GeminiClient:
                 "topP": 1,
                 "maxOutputTokens": 2048,
             },
-            # Deep Think mode with thinking_level parameter
-            "thinking_level": 2,  # 0=no thinking, 1=light, 2=deep
         }
         
         try:

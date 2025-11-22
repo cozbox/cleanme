@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "CleanMe – Add Tidy Zone",
-        "description": "Configure a room/area that CleanMe will analyze using your camera and Gemini 3 Pro Preview AI.",
+        "description": "Configure a room/area that CleanMe will analyze using your camera and Gemini AI.",
         "data": {
           "name": "Zone name (e.g., Kitchen, Living Room)",
           "camera_entity": "Camera entity",

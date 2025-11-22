@@ -45,8 +45,10 @@ PERSONALITY_OPTIONS = {
     PERSONALITY_PROFESSIONAL: "💼 Professional - Formal, clinical",
 }
 
-# Gemini 3 Pro Preview configuration
-GEMINI_MODEL = "gemini-3-pro-preview"
+# Gemini model configuration
+# Using gemini-2.0-flash-exp for best balance of speed, cost, and vision capabilities
+# Alternative: gemini-1.5-pro-latest for higher quality
+GEMINI_MODEL = "gemini-2.0-flash-exp"
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 # Sensor attributes
