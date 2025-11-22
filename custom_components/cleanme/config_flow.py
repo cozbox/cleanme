@@ -125,7 +125,9 @@ class CleanMeOptionsFlow(config_entries.OptionsFlow):
                         self._entry,
                         data={**self._entry.data, **user_input}
                     )
-                    return self.async_create_entry(title="", data={})
+                    # Trigger reload of the entry to apply changes
+                    await self.hass.config_entries.async_reload(self._entry.entry_id)
+                    return self.async_abort(reason="reconfigure_successful")
             except Exception as err:
                 LOGGER.exception("CleanMe options flow failed: %s", err)
                 errors["base"] = "unknown"

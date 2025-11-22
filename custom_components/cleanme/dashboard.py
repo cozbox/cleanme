@@ -1,4 +1,12 @@
-"""Auto-generate Lovelace dashboard configuration for CleanMe zones."""
+"""Auto-generate Lovelace dashboard configuration for CleanMe zones.
+
+NOTE: Dashboard cards use custom:mushroom-template-card which requires:
+- Mushroom Cards (HACS: piitaya/lovelace-mushroom)
+- Card Mod (HACS: thomasloven/lovelace-card-mod)
+
+These dependencies are documented in README.md and should be installed
+separately by users who want to use the dashboard features.
+"""
 from __future__ import annotations
 
 from typing import Any, Dict, List

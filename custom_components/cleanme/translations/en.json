@@ -19,7 +19,8 @@
       "invalid_api_key": "Invalid Gemini API key. Please check your key and try again."
     },
     "abort": {
-      "already_configured": "This zone is already configured."
+      "already_configured": "This zone is already configured.",
+      "reconfigure_successful": "Configuration updated successfully."
     }
   },
   "options": {

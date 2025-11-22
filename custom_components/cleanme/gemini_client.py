@@ -80,7 +80,7 @@ class GeminiClient:
         }
         
         try:
-            async with session.post(url, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=90)) as resp:
+            async with session.post(url, headers=headers, json=payload, timeout=90) as resp:
                 if resp.status != 200:
                     text = await resp.text()
                     raise GeminiClientError(f"Gemini API HTTP {resp.status}: {text}")
