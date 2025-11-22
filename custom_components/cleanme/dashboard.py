@@ -15,6 +15,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 
+# Dashboard constants
+DASHBOARD_TITLE = "🏠 Tidy Tracker"
+DASHBOARD_ICON = "mdi:broom"
+DASHBOARD_PATH = "cleanme"
+DASHBOARD_BADGES: List[Any] = []
+
 
 def generate_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
     """
@@ -44,10 +50,10 @@ def generate_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
 
     # Build the complete dashboard configuration
     dashboard_config = {
-        "title": "🏠 Tidy Tracker",
-        "icon": "mdi:broom",
-        "path": "cleanme",
-        "badges": [],
+        "title": DASHBOARD_TITLE,
+        "icon": DASHBOARD_ICON,
+        "path": DASHBOARD_PATH,
+        "badges": DASHBOARD_BADGES,
         "cards": cards,
     }
 
@@ -319,10 +325,10 @@ def generate_basic_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
     
     # Build the complete dashboard configuration
     dashboard_config = {
-        "title": "🏠 Tidy Tracker",
-        "icon": "mdi:broom",
-        "path": "cleanme",
-        "badges": [],
+        "title": DASHBOARD_TITLE,
+        "icon": DASHBOARD_ICON,
+        "path": DASHBOARD_PATH,
+        "badges": DASHBOARD_BADGES,
         "cards": cards,
     }
     

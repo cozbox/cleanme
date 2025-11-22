@@ -343,15 +343,6 @@ def _register_services(hass: HomeAssistant) -> None:
             # Generate basic dashboard config
             dashboard_config = cleanme_dashboard.generate_basic_dashboard_config(hass)
             
-            # Build full Lovelace view YAML
-            yaml_content = {
-                "title": dashboard_config["title"],
-                "path": dashboard_config["path"],
-                "icon": dashboard_config["icon"],
-                "badges": [],
-                "cards": dashboard_config["cards"]
-            }
-            
             # Write to /config/dashboards/cleanme-basic.yaml
             dashboards_dir = hass.config.path("dashboards")
             
@@ -362,11 +353,12 @@ def _register_services(hass: HomeAssistant) -> None:
             yaml_file = os.path.join(dashboards_dir, "cleanme-basic.yaml")
             
             with open(yaml_file, 'w', encoding='utf-8') as f:
-                yaml.dump(yaml_content, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+                yaml.dump(dashboard_config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
             
             LOGGER.info("CleanMe: Basic dashboard YAML written to %s", yaml_file)
         except Exception as e:
             LOGGER.error("CleanMe: Failed to write basic dashboard YAML: %s", e)
+
 
     hass.services.async_register(
         DOMAIN,
