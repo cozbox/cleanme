@@ -1,0 +1,34 @@
+blueprint:
+  name: CleanMe Morning Auto-Check
+  description: Automatically check all CleanMe zones every morning
+  domain: automation
+  input:
+    check_time:
+      name: Check time
+      description: What time to run the morning checks
+      default: "07:00:00"
+      selector:
+        time:
+
+trigger:
+  - platform: time
+    at: !input check_time
+
+action:
+  # Get all zones and trigger checks for each
+  - repeat:
+      for_each: >
+        {% set zones = integration_entities('cleanme') 
+           | select('match', '.*_tidy$') 
+           | map('state_attr', 'friendly_name') 
+           | map('replace', ' Tidy', '')
+           | list %}
+        {{ zones }}
+      sequence:
+        - service: cleanme.request_check
+          data:
+            zone: "{{ repeat.item }}"
+        - delay:
+            seconds: 5  # Small delay between checks to avoid overwhelming the API
+
+mode: single

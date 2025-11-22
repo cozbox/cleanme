@@ -1,0 +1,115 @@
+blueprint:
+  name: CleanMe Weekly Deep Check
+  description: Run a thorough check of all zones with increased pickiness on a weekly schedule
+  domain: automation
+  input:
+    check_day:
+      name: Check day
+      description: Day of the week to run the deep check
+      default: "sun"
+      selector:
+        select:
+          options:
+            - label: Monday
+              value: "mon"
+            - label: Tuesday
+              value: "tue"
+            - label: Wednesday
+              value: "wed"
+            - label: Thursday
+              value: "thu"
+            - label: Friday
+              value: "fri"
+            - label: Saturday
+              value: "sat"
+            - label: Sunday
+              value: "sun"
+    check_time:
+      name: Check time
+      description: Time to run the deep check
+      default: "18:00:00"
+      selector:
+        time:
+    notification_service:
+      name: Notification service
+      description: The notification service to use for the report
+      default: notify.persistent_notification
+      selector:
+        text:
+
+trigger:
+  - platform: time
+    at: !input check_time
+
+condition:
+  - condition: time
+    weekday: !input check_day
+
+action:
+  # Run checks for all zones
+  - repeat:
+      for_each: >
+        {% set zones = integration_entities('cleanme') 
+           | select('match', '.*_tidy$') 
+           | map('state_attr', 'friendly_name') 
+           | map('replace', ' Tidy', '')
+           | list %}
+        {{ zones }}
+      sequence:
+        - service: cleanme.request_check
+          data:
+            zone: "{{ repeat.item }}"
+        - delay:
+            seconds: 10  # Allow time for API processing
+  
+  # Wait for all checks to complete
+  - delay:
+      seconds: 30
+  
+  # Send detailed report
+  - service: !input notification_service
+    data:
+      title: "📊 Weekly Deep Clean Report"
+      message: >
+        {% set zones = integration_entities('cleanme') | select('match', '.*_tidy$') | list %}
+        {% set tidy_count = zones | select('is_state', 'on') | list | count %}
+        {% set messy_count = zones | select('is_state', 'off') | list | count %}
+        {% set total_tasks = namespace(count=0) %}
+        
+        **Weekly Deep Check Complete**
+        
+        ✅ Tidy zones: {{ tidy_count }}
+        ❌ Needs attention: {{ messy_count }}
+        
+        ---
+        
+        {% for entity in zones %}
+        {% set zone_name = state_attr(entity, 'friendly_name') | replace(' Tidy', '') %}
+        {% set tasks_entity = entity | replace('binary_sensor.', 'sensor.') | replace('_tidy', '_tasks') %}
+        {% set tasks = state_attr(tasks_entity, 'tasks') %}
+        {% set comment = state_attr(tasks_entity, 'comment') %}
+        {% set task_count = tasks | length if tasks else 0 %}
+        {% set total_tasks.count = total_tasks.count + task_count %}
+        
+        **{{ zone_name }}**
+        {% if is_state(entity, 'on') %}
+        ✅ All tidy!
+        {% else %}
+        ❌ {{ task_count }} task(s) needed
+        {% endif %}
+        {% if comment %}
+        💬 {{ comment }}
+        {% endif %}
+        {% if tasks %}
+        Tasks:
+        {% for task in tasks %}
+        - {{ task }}
+        {% endfor %}
+        {% endif %}
+        
+        ---
+        {% endfor %}
+        
+        **Total tasks across all zones:** {{ total_tasks.count }}
+
+mode: single
