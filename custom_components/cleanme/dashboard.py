@@ -32,6 +32,9 @@ def generate_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
     zones_data = hass.data.get(DOMAIN, {})
 
     # Get all zone names
+    # Note: hass.data[DOMAIN] contains both CleanMeZone objects and metadata keys
+    # (like "dashboard_config", "dashboard_panel_registered"), so we use hasattr
+    # to filter for actual zone objects that have a 'name' attribute
     zone_names = []
     for zone in zones_data.values():
         if hasattr(zone, 'name'):
@@ -311,6 +314,8 @@ def generate_basic_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
     zones_data = hass.data.get(DOMAIN, {})
     
     # Get all zone names
+    # Note: hass.data[DOMAIN] contains both CleanMeZone objects and metadata keys,
+    # so we use hasattr to filter for actual zone objects
     zone_names = []
     for zone in zones_data.values():
         if hasattr(zone, 'name'):
