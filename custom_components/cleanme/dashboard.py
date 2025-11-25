@@ -135,13 +135,15 @@ def _create_zone_card(zone_name: str) -> Dict[str, Any]:
                 ],
                 "card": {
                     "type": "markdown",
-                    "content": "{% set tasks = state_attr('sensor." + zone_id + "_tasks', 'tasks') %}\n"
-                    "{% if tasks %}\n"
-                    "**Tasks to complete:**\n"
-                    "{% for task in tasks %}\n"
-                    "- {{ task }}\n"
-                    "{% endfor %}\n"
-                    "{% endif %}",
+                    "content": (
+                        f"{{% set tasks = state_attr('sensor.{zone_id}_tasks', 'tasks') %}}\n"
+                        "{% if tasks %}\n"
+                        "**Tasks to complete:**\n"
+                        "{% for task in tasks %}\n"
+                        "- {{ task }}\n"
+                        "{% endfor %}\n"
+                        "{% endif %}"
+                    ),
                 },
             },
             # Comment section (conditional - only shown when comment exists)
@@ -155,10 +157,12 @@ def _create_zone_card(zone_name: str) -> Dict[str, Any]:
                 ],
                 "card": {
                     "type": "markdown",
-                    "content": "{% set comment = state_attr('sensor." + zone_id + "_tasks', 'comment') %}\n"
-                    "{% if comment %}\n"
-                    "**💬 AI Comment:** {{ comment }}\n"
-                    "{% endif %}",
+                    "content": (
+                        f"{{% set comment = state_attr('sensor.{zone_id}_tasks', 'comment') %}}\n"
+                        "{% if comment %}\n"
+                        "**💬 AI Comment:** {{ comment }}\n"
+                        "{% endif %}"
+                    ),
                 },
             },
             # Action buttons
