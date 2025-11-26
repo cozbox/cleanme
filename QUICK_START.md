@@ -2,26 +2,18 @@
 
 Follow these steps to get your CleanMe dashboard working:
 
-## Step 1: Install Custom Cards (Required)
+## Step 1: Install Custom Card (Required)
 
-The CleanMe dashboard requires two custom cards from HACS:
+The CleanMe dashboard requires Bubble Card from HACS:
 
-### A. Mushroom Cards
+### Bubble Card
 1. Open HACS in Home Assistant
 2. Click "Frontend"
 3. Click "+ Explore & Download Repositories"
-4. Search for "Mushroom"
-5. Click "Mushroom" by piitaya
+4. Search for "Bubble Card"
+5. Click "Bubble Card" by Clooos
 6. Click "Download"
 7. Restart Home Assistant
-
-### B. Card Mod
-1. In HACS, click "Frontend"
-2. Click "+ Explore & Download Repositories"
-3. Search for "Card Mod"
-4. Click "Card Mod" by thomasloven
-5. Click "Download"
-6. Restart Home Assistant
 
 ## Step 2: Configure CleanMe Integration
 
@@ -39,11 +31,14 @@ The CleanMe dashboard requires two custom cards from HACS:
 
 ## Step 3: Access Your Dashboard
 
-### Option A: Automatic Dashboard (Easiest)
-After adding your first zone, CleanMe automatically creates a dashboard:
-1. Look for **CleanMe** in your Home Assistant sidebar
-2. Click it to view your dashboard
-3. Done! 🎉
+### Option A: Add Dashboard to Sidebar
+After adding your first zone, CleanMe creates a dashboard file:
+1. Go to **Settings** → **Dashboards**
+2. Click **Add Dashboard**
+3. Choose **Use YAML**
+4. Select `/config/dashboards/cleanme.yaml`
+5. Give it a title: "CleanMe"
+6. Done! 🎉
 
 ### Option B: YAML Mode Setup
 If you use YAML mode for dashboards:
@@ -54,7 +49,7 @@ If you use YAML mode for dashboards:
      dashboards:
        cleanme-dashboard:
          mode: yaml
-         title: CleanMe Tidy Tracker
+         title: CleanMe
          icon: mdi:broom
          show_in_sidebar: true
          filename: dashboards/cleanme.yaml
@@ -93,7 +88,7 @@ Your dashboard should show:
 - Check logs: Settings → System → Logs
 
 **"Custom element doesn't exist" error?**
-- Mushroom Cards or Card Mod not installed
+- Bubble Card not installed
 - Install via HACS (see Step 1)
 - Restart Home Assistant
 - Clear browser cache

@@ -25,8 +25,7 @@ CleanMe uses Google's Gemini AI to analyze camera snapshots of your rooms and pr
 - **HACS** (optional but recommended) for easy installation
 
 ### Optional (for dashboard)
-- **Mushroom Cards** - For beautiful dashboard cards ([HACS](https://github.com/piitaya/lovelace-mushroom))
-- **Card Mod** - For card styling ([HACS](https://github.com/thomasloven/lovelace-card-mod))
+- **Bubble Card** - For beautiful dashboard cards ([HACS](https://github.com/Clooos/Bubble-Card))
 
 ## 🚀 Installation
 
@@ -171,9 +170,10 @@ CleanMe automatically creates a beautiful dashboard for all your zones! The dash
 
 **For most users (Storage Mode):**
 1. Install CleanMe via HACS
-2. Install required custom cards: [Mushroom Cards](https://github.com/piitaya/lovelace-mushroom) and [Card Mod](https://github.com/thomasloven/lovelace-card-mod)
+2. Install required custom card: [Bubble Card](https://github.com/Clooos/Bubble-Card)
 3. Add your first zone via Settings → Integrations
-4. Check your sidebar - "CleanMe" dashboard automatically appears! 🎉
+4. Go to Settings → Dashboards → Add dashboard → Choose YAML → Select `/config/dashboards/cleanme.yaml`
+5. Pin it to your sidebar! 🎉
 
 **For YAML mode users:**
 Add to `configuration.yaml`:
@@ -182,7 +182,7 @@ lovelace:
   dashboards:
     cleanme-dashboard:
       mode: yaml
-      title: CleanMe Tidy Tracker
+      title: CleanMe
       icon: mdi:broom
       show_in_sidebar: true
       filename: dashboards/cleanme.yaml
@@ -205,19 +205,31 @@ The integration automatically creates:
 If you want to manually create cards:
 
 ```yaml
-type: custom:mushroom-template-card
-primary: 🧹 Kitchen
-secondary: "{{ state_attr('sensor.kitchen_tasks', 'comment') }}"
-icon: >
-  {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-  mdi:check-circle
-  {% else %}
-  mdi:alert-circle
-  {% endif %}
-icon_color: >
-  {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-  green
-  {% else %}
+type: custom:bubble-card
+card_type: button
+entity: binary_sensor.kitchen_tidy
+name: Kitchen
+icon: mdi:home
+show_state: true
+show_last_changed: true
+sub_button:
+  - name: Check
+    icon: mdi:camera-iris
+    show_background: false
+    tap_action:
+      action: call-service
+      service: cleanme.request_check
+      service_data:
+        zone: Kitchen
+  - name: Done
+    icon: mdi:check-bold
+    show_background: false
+    tap_action:
+      action: call-service
+      service: cleanme.clear_tasks
+      service_data:
+        zone: Kitchen
+```
   red
   {% endif %}
 tap_action:

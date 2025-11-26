@@ -7,89 +7,127 @@
 # 2. Copied into your ui-lovelace.yaml
 # 3. Used via the auto-generated sidebar panel
 
-title: 🏠 Tidy Tracker
+title: 🏠 CleanMe
 path: cleanme
 icon: mdi:broom
 badges: []
 cards:
+  # Header Separator
+  - type: custom:bubble-card
+    card_type: separator
+    name: CleanMe Dashboard
+    icon: mdi:broom
+
+  # Status Overview
+  - type: horizontal-stack
+    cards:
+      - type: custom:bubble-card
+        card_type: button
+        entity: sensor.cleanme_system_status
+        name: House Status
+        icon: mdi:home-analytics
+        show_state: true
+
+      - type: custom:bubble-card
+        card_type: button
+        entity: binary_sensor.cleanme_ready
+        name: CleanMe Status
+        icon: mdi:robot-vacuum
+        show_state: true
+
   # Example: Kitchen Zone Card
-  - type: custom:mushroom-template-card
-    primary: 🧹 Kitchen
-    secondary: "{{ state_attr('sensor.kitchen_tasks', 'comment') }}"
-    icon: >
-      {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-      mdi:check-circle
-      {% else %}
-      mdi:alert-circle
-      {% endif %}
-    icon_color: >
-      {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-      green
-      {% else %}
-      red
-      {% endif %}
-    badge_icon: mdi:format-list-checkbox
-    badge_color: >
-      {% if states('sensor.kitchen_tasks') | int > 0 %}
-      orange
-      {% else %}
-      green
-      {% endif %}
-    tap_action:
-      action: more-info
-    hold_action:
-      action: none
-    card_mod:
-      style: |
-        ha-card {
-          border-left: 4px solid {% if is_state('binary_sensor.kitchen_tidy', 'on') %}var(--success-color){% else %}var(--error-color){% endif %};
-        }
+  - type: custom:bubble-card
+    card_type: button
+    entity: binary_sensor.kitchen_tidy
+    name: Kitchen
+    icon: mdi:home
+    show_state: true
+    show_last_changed: true
+    sub_button:
+      - name: Check
+        icon: mdi:camera-iris
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.request_check
+          service_data:
+            zone: Kitchen
+      - name: Done
+        icon: mdi:check-bold
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.clear_tasks
+          service_data:
+            zone: Kitchen
+      - name: Snooze
+        icon: mdi:sleep
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.snooze_zone
+          service_data:
+            zone: Kitchen
+            duration_minutes: 60
 
   # Example: Living Room Zone Card
-  - type: custom:mushroom-template-card
-    primary: 🧹 Living Room
-    secondary: "{{ state_attr('sensor.living_room_tasks', 'comment') }}"
-    icon: >
-      {% if is_state('binary_sensor.living_room_tidy', 'on') %}
-      mdi:check-circle
-      {% else %}
-      mdi:alert-circle
-      {% endif %}
-    icon_color: >
-      {% if is_state('binary_sensor.living_room_tidy', 'on') %}
-      green
-      {% else %}
-      red
-      {% endif %}
-    badge_icon: mdi:format-list-checkbox
-    badge_color: >
-      {% if states('sensor.living_room_tasks') | int > 0 %}
-      orange
-      {% else %}
-      green
-      {% endif %}
-    tap_action:
-      action: more-info
-    hold_action:
-      action: none
-    card_mod:
-      style: |
-        ha-card {
-          border-left: 4px solid {% if is_state('binary_sensor.living_room_tidy', 'on') %}var(--success-color){% else %}var(--error-color){% endif %};
-        }
+  - type: custom:bubble-card
+    card_type: button
+    entity: binary_sensor.living_room_tidy
+    name: Living Room
+    icon: mdi:home
+    show_state: true
+    show_last_changed: true
+    sub_button:
+      - name: Check
+        icon: mdi:camera-iris
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.request_check
+          service_data:
+            zone: Living Room
+      - name: Done
+        icon: mdi:check-bold
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.clear_tasks
+          service_data:
+            zone: Living Room
+      - name: Snooze
+        icon: mdi:sleep
+        show_background: false
+        tap_action:
+          action: call-service
+          service: cleanme.snooze_zone
+          service_data:
+            zone: Living Room
+            duration_minutes: 60
 
-  # Add Zone Button
-  - type: custom:mushroom-template-card
-    primary: + Add Another Zone
-    secondary: Configure a new room to track
-    icon: mdi:plus-circle
-    icon_color: blue
-    tap_action:
-      action: navigate
-      navigation_path: /config/integrations/integration/cleanme
-    card_mod:
-      style: |
-        ha-card {
-          border: 2px dashed var(--primary-color);
-          opacity: 0.8;
-        }
+  # Quick Actions
+  - type: custom:bubble-card
+    card_type: separator
+    name: Quick Actions
+    icon: mdi:lightning-bolt
+
+  - type: horizontal-stack
+    cards:
+      - type: custom:bubble-card
+        card_type: button
+        name: Add Zone
+        icon: mdi:plus-circle
+        tap_action:
+          action: navigate
+          navigation_path: /config/integrations/integration/cleanme
+        button_type: name
+
+      - type: custom:bubble-card
+        card_type: button
+        name: Settings
+        icon: mdi:cog
+        tap_action:
+          action: navigate
+          navigation_path: /config/integrations/integration/cleanme
+        button_type: name
+

@@ -193,5 +193,5 @@ regenerate_dashboard:
 
 export_basic_dashboard:
   name: Export basic dashboard
-  description: Export a basic dashboard without custom cards (Mushroom/Card Mod) to /config/dashboards/cleanme-basic.yaml. Useful for users who haven't installed custom cards yet.
+  description: Export a basic dashboard without custom cards (Bubble Card) to /config/dashboards/cleanme-basic.yaml. Useful for users who haven't installed custom cards yet.
 
