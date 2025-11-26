@@ -8,12 +8,12 @@ import os
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.const import EVENT_COMPONENT_LOADED
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util.dt import utcnow
-from homeassistant.components.persistent_notification import async_create
 
 from .const import (
     DOMAIN,
@@ -208,7 +208,7 @@ def _find_zone_by_name(hass: HomeAssistant, zone_name: str) -> CleanMeZone | Non
 
 
 async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
-    """Generate/update the YAML dashboard file for CleanMe."""
+    """Generate/update the dashboard for CleanMe and auto-register it."""
     dashboard_state = _get_dashboard_state(hass)
 
     if not YAML_AVAILABLE:
@@ -223,8 +223,8 @@ async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
         # Generate dashboard config
         dashboard_config = cleanme_dashboard.generate_dashboard_config(hass)
         
-        # Build full Lovelace dashboard YAML with views list
-        yaml_content = {
+        # Build full Lovelace dashboard config with views list
+        lovelace_config = {
             "title": "CleanMe",
             "views": [
                 {
@@ -237,7 +237,7 @@ async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
             ]
         }
 
-        # Write to /config/dashboards/cleanme.yaml
+        # Write to /config/dashboards/cleanme.yaml for backup/reference
         dashboards_dir = hass.config.path("dashboards")
 
         def _write_yaml() -> str:
@@ -245,7 +245,7 @@ async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
             yaml_file = os.path.join(dashboards_dir, "cleanme.yaml")
             with open(yaml_file, "w", encoding="utf-8") as f:
                 yaml.dump(
-                    yaml_content,
+                    lovelace_config,
                     f,
                     default_flow_style=False,
                     allow_unicode=True,
@@ -262,29 +262,132 @@ async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
         async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
         LOGGER.info("CleanMe: Dashboard YAML written to %s", yaml_file)
 
-        message = (
-            "Your CleanMe dashboard has been written to:\n"
-            f"`{yaml_file}`\n\n"
-            "To use it, go to **Settings → Dashboards → Add dashboard**, "
-            "choose **YAML**, and select this file as the source. You can "
-            "then pin it to the sidebar as \"CleanMe\"."
-        )
+        # Auto-register the dashboard in Home Assistant sidebar
+        await _auto_register_dashboard(hass, lovelace_config)
 
-        try:
-            await async_create(
-                hass,
-                message,
-                title="CleanMe dashboard ready",
-                notification_id="cleanme_dashboard_ready",
-            )
-        except Exception as err:
-            LOGGER.warning("Could not create notification: %s", err)
     except Exception as e:
-        LOGGER.error("CleanMe: Failed to write dashboard YAML: %s", e)
+        LOGGER.error("CleanMe: Failed to write dashboard: %s", e)
         dashboard_state[ATTR_DASHBOARD_LAST_ERROR] = str(e)
         dashboard_state[ATTR_DASHBOARD_LAST_GENERATED] = utcnow()
         dashboard_state[ATTR_DASHBOARD_STATUS] = "error"
         async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
+
+
+async def _auto_register_dashboard(
+    hass: HomeAssistant,
+    lovelace_config: dict[str, Any],
+) -> bool:
+    """Auto-register CleanMe dashboard in HA sidebar using Lovelace storage API."""
+    from homeassistant.components import frontend
+    from homeassistant.components.lovelace import const as lovelace_const
+    from homeassistant.components.lovelace import dashboard as lovelace_dashboard
+
+    dashboard_state = _get_dashboard_state(hass)
+    url_path = "cleanme"
+    title = "CleanMe"
+    icon = "mdi:broom"
+
+    # Check if lovelace is loaded
+    lovelace_data = hass.data.get(lovelace_const.LOVELACE_DATA)
+    if lovelace_data is None:
+        LOGGER.debug("CleanMe: Lovelace not loaded yet, scheduling dashboard registration")
+        # Schedule registration for when lovelace loads
+        @callback
+        def _on_component_loaded(event) -> None:
+            if event.data.get("component") != lovelace_const.DOMAIN:
+                return
+            unsubscribe()
+            hass.async_create_task(_auto_register_dashboard(hass, lovelace_config))
+
+        unsubscribe = hass.bus.async_listen(EVENT_COMPONENT_LOADED, _on_component_loaded)
+        return False
+
+    try:
+        dashboards_collection = lovelace_dashboard.DashboardsCollection(hass)
+        await dashboards_collection.async_load()
+    except Exception as err:
+        LOGGER.error("CleanMe: Failed to load Lovelace dashboards collection: %s", err)
+        return False
+
+    # Check if dashboard already exists
+    existing_id: str | None = None
+    existing_item: dict[str, Any] | None = None
+    for item_id, item in dashboards_collection.data.items():
+        if item.get(lovelace_const.CONF_URL_PATH) == url_path:
+            existing_id = item_id
+            existing_item = item
+            break
+
+    base_item: dict[str, Any] = {
+        lovelace_const.CONF_TITLE: title,
+        lovelace_const.CONF_ICON: icon,
+        lovelace_const.CONF_URL_PATH: url_path,
+        lovelace_const.CONF_REQUIRE_ADMIN: False,
+        lovelace_const.CONF_SHOW_IN_SIDEBAR: True,
+    }
+
+    item: dict[str, Any]
+    if existing_item is None:
+        LOGGER.info("CleanMe: Creating storage-backed Lovelace dashboard '%s'", url_path)
+        try:
+            item = await dashboards_collection.async_create_item(
+                {**base_item, lovelace_const.CONF_MODE: lovelace_const.MODE_STORAGE}
+            )
+        except Exception as err:
+            LOGGER.error("CleanMe: Failed to create Lovelace dashboard metadata: %s", err)
+            return False
+    else:
+        # Update existing dashboard metadata if needed
+        updates = {}
+        for key, value in (
+            (lovelace_const.CONF_TITLE, title),
+            (lovelace_const.CONF_ICON, icon),
+            (lovelace_const.CONF_SHOW_IN_SIDEBAR, True),
+            (lovelace_const.CONF_REQUIRE_ADMIN, False),
+        ):
+            if existing_item.get(key) != value:
+                updates[key] = value
+
+        if updates:
+            LOGGER.info("CleanMe: Updating Lovelace dashboard metadata for '%s'", url_path)
+            try:
+                item = await dashboards_collection.async_update_item(existing_id, updates)
+            except Exception as err:
+                LOGGER.error("CleanMe: Failed to update Lovelace dashboard metadata: %s", err)
+                item = existing_item
+        else:
+            item = existing_item
+
+    # Register the dashboard config storage
+    lovelace_storage = lovelace_data.dashboards.get(url_path)
+    if not isinstance(lovelace_storage, lovelace_dashboard.LovelaceStorage):
+        lovelace_storage = lovelace_dashboard.LovelaceStorage(hass, item)
+        lovelace_data.dashboards[url_path] = lovelace_storage
+    else:
+        lovelace_storage.config = {**item, lovelace_const.CONF_URL_PATH: url_path}
+
+    # Save the dashboard layout
+    try:
+        await lovelace_storage.async_save(lovelace_config)
+    except Exception as err:
+        LOGGER.error("CleanMe: Failed to store Lovelace dashboard layout: %s", err)
+        return False
+
+    # Register the panel in the sidebar
+    frontend.async_register_built_in_panel(
+        hass,
+        lovelace_const.DOMAIN,
+        frontend_url_path=url_path,
+        sidebar_title=title,
+        sidebar_icon=icon,
+        require_admin=False,
+        config={"mode": lovelace_storage.mode},
+        update=True,
+    )
+
+    dashboard_state["panel_registered"] = True
+    LOGGER.info("CleanMe: Dashboard auto-registered and visible in sidebar at /%s", url_path)
+    return True
 
 
 def _register_services(hass: HomeAssistant) -> None:
