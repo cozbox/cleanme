@@ -116,7 +116,7 @@ class CleanMeSnooze1hButton(CleanMeZoneButton):
     async def async_press(self) -> None:
         """Handle button press."""
         _LOGGER.info("Snooze 1h button pressed for zone '%s'", self._zone.name)
-        await self._zone.async_snooze(duration_minutes=60)
+        await self._zone.async_snooze(minutes=60)
 
 
 class CleanMeSnoozeTomorrowButton(CleanMeZoneButton):
@@ -133,7 +133,7 @@ class CleanMeSnoozeTomorrowButton(CleanMeZoneButton):
         """Handle button press."""
         _LOGGER.info("Snooze Tomorrow button pressed for zone '%s'", self._zone.name)
         # Snooze for 24 hours
-        await self._zone.async_snooze(duration_minutes=1440)
+        await self._zone.async_snooze(minutes=1440)
 
 
 class CleanMeUnsnoozeButton(CleanMeZoneButton):
