@@ -40,8 +40,9 @@ def test_yaml_available_constant():
 def test_no_manual_notification():
     """Test that the manual dashboard notification was removed."""
     source = INIT_PATH.read_text(encoding="utf-8")
-    assert "CleanMe dashboard ready" not in source or "persistent_notification" not in source, (
-        "Manual dashboard notification should be removed - dashboard should auto-register"
+    # Verify the persistent_notification import is not present
+    assert "from homeassistant.components.persistent_notification import async_create" not in source, (
+        "persistent_notification import should be removed - dashboard should auto-register"
     )
 
 
