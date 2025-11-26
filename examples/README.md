@@ -53,12 +53,11 @@ This directory contains example configuration files for setting up the CleanMe d
 
 **Usage**:
 - Examples for both YAML mode and Storage mode
-- Shows correct URLs for Mushroom Cards and Card Mod
+- Shows correct URLs for Bubble Card
 - Instructions for adding resources via UI or YAML
 
-**Required custom cards**:
-- Mushroom Cards (`piitaya/lovelace-mushroom`)
-- Card Mod (`thomasloven/lovelace-card-mod`)
+**Required custom card**:
+- Bubble Card (`Clooos/Bubble-Card`)
 
 ---
 
@@ -66,15 +65,14 @@ This directory contains example configuration files for setting up the CleanMe d
 
 **Most users should follow these steps:**
 
-1. **Install custom cards** via HACS:
-   - Mushroom Cards
-   - Card Mod
+1. **Install custom card** via HACS:
+   - Bubble Card
 
 2. **Add CleanMe zones** via Settings → Devices & Services
 
-3. **Dashboard auto-appears** in your sidebar!
+3. **Dashboard auto-generates** at `/config/dashboards/cleanme.yaml`
 
-That's it! No manual configuration needed for Storage mode users.
+4. **Add to sidebar**: Settings → Dashboards → Add dashboard → Choose YAML → Select the file
 
 ---
 
@@ -114,7 +112,7 @@ When you add zones, CleanMe automatically creates:
 ### `/config/dashboards/cleanme-basic.yaml` (optional)
 - Generated when you call `cleanme.export_basic_dashboard` service
 - Uses standard entities cards (no custom cards required)
-- Fallback option if you haven't installed Mushroom/Card Mod
+- Fallback option if you haven't installed Bubble Card
 
 ---
 

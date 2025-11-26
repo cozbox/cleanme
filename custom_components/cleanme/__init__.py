@@ -13,6 +13,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util.dt import utcnow
+from homeassistant.components.persistent_notification import async_create
 
 from .const import (
     DOMAIN,
@@ -149,34 +150,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         dashboard_state[ATTR_DASHBOARD_LAST_ERROR] = str(e)
         async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
         LOGGER.error("CleanMe: Failed to generate dashboard: %s", e)
-    
-    # Register the dashboard as a UI panel if not already registered
-    if not hass.data[DOMAIN].get("dashboard_panel_registered"):
-        try:
-            components = getattr(hass, "components", None)
-
-            # Check if frontend component is available
-            if not components or not hasattr(components, "frontend"):
-                LOGGER.warning("CleanMe: Frontend component not available, skipping dashboard panel registration")
-                return True
-
-            # Create a panel for CleanMe
-            await components.frontend.async_register_built_in_panel(
-                component_name="lovelace",
-                sidebar_title="CleanMe",
-                sidebar_icon="mdi:broom",
-                frontend_url_path="cleanme",
-                require_admin=False,
-                config={"mode": "storage"},
-            )
-            
-            # Store the dashboard for the panel
-            hass.data[DOMAIN]["dashboard_panel_registered"] = True
-            dashboard_state["panel_registered"] = True
-            async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
-            LOGGER.info("CleanMe: Dashboard panel registered in sidebar")
-        except Exception as e:
-            LOGGER.error("CleanMe: Failed to register dashboard panel: %s", e)
 
     async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
 
@@ -200,23 +173,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.services.async_remove(DOMAIN, "delete_zone")
         hass.services.async_remove(DOMAIN, "regenerate_dashboard")
         hass.services.async_remove(DOMAIN, "export_basic_dashboard")
-
-        # Remove dashboard panel when all zones are unloaded
-        if hass.data[DOMAIN].get("dashboard_panel_registered"):
-            try:
-                components = getattr(hass, "components", None)
-                # Check if frontend component is available
-                if components and hasattr(components, "frontend"):
-                    await components.frontend.async_remove_panel("cleanme")
-                    LOGGER.info("CleanMe: Dashboard panel removed from sidebar")
-                else:
-                    LOGGER.warning("CleanMe: Frontend component not available, skipping dashboard panel removal")
-
-                hass.data[DOMAIN]["dashboard_panel_registered"] = False
-                dashboard_state = _get_dashboard_state(hass)
-                dashboard_state["panel_registered"] = False
-            except Exception as e:
-                LOGGER.error("CleanMe: Failed to remove dashboard panel: %s", e)
     else:
         # Regenerate dashboard when zones change
         try:
@@ -296,29 +252,23 @@ async def _regenerate_dashboard_yaml(hass: HomeAssistant) -> None:
         async_dispatcher_send(hass, SIGNAL_SYSTEM_STATE_UPDATED)
         LOGGER.info("CleanMe: Dashboard YAML written to %s", yaml_file)
 
+        message = (
+            "Your CleanMe dashboard has been written to:\n"
+            f"`{yaml_file}`\n\n"
+            "To use it, go to **Settings → Dashboards → Add dashboard**, "
+            "choose **YAML**, and select this file as the source. You can "
+            "then pin it to the sidebar as \"CleanMe\"."
+        )
+
         try:
-            components = getattr(hass, "components", None)
-            if components and hasattr(components, "persistent_notification"):
-                await components.persistent_notification.async_create(
-                    (
-                        "Your CleanMe dashboard has been written to:\n"
-                        f"`{yaml_file}`\n\n"
-                        "To use it, go to **Settings → Dashboards → Add dashboard**, "
-                        "choose **YAML**, and select this file as the source. You can "
-                        "then pin it to the sidebar as \"CleanMe\"."
-                    ),
-                    title="CleanMe dashboard ready",
-                    notification_id="cleanme_dashboard_ready",
-                )
-            else:
-                LOGGER.warning(
-                    "CleanMe: Persistent notification component not available; "
-                    "skipping dashboard notification"
-                )
-        except Exception as err:
-            LOGGER.warning(
-                "CleanMe: Unable to create dashboard notification: %s", err
+            await async_create(
+                hass,
+                message,
+                title="CleanMe dashboard ready",
+                notification_id="cleanme_dashboard_ready",
             )
+        except Exception as err:
+            LOGGER.warning("Could not create notification: %s", err)
     except Exception as e:
         LOGGER.error("CleanMe: Failed to write dashboard YAML: %s", e)
         dashboard_state[ATTR_DASHBOARD_LAST_ERROR] = str(e)

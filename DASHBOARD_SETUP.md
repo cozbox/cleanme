@@ -40,8 +40,7 @@ The integration automatically:
 - Ensure you've added at least one zone
 
 **Cards look broken?**
-- Install Mushroom Cards via HACS: `piitaya/lovelace-mushroom`
-- Install Card Mod via HACS: `thomasloven/lovelace-card-mod`
+- Install Bubble Card via HACS: `Clooos/Bubble-Card`
 - Refresh your browser after installing custom cards
 
 ---
@@ -84,23 +83,30 @@ The integration automatically:
 ### Manual Card Example:
 
 ```yaml
-- type: custom:mushroom-template-card
-  primary: 🧹 Kitchen
-  secondary: "{{ state_attr('sensor.kitchen_tasks', 'comment') }}"
-  icon: >
-    {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-    mdi:check-circle
-    {% else %}
-    mdi:alert-circle
-    {% endif %}
-  icon_color: >
-    {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-    green
-    {% else %}
-    red
-    {% endif %}
-  tap_action:
-    action: more-info
+- type: custom:bubble-card
+  card_type: button
+  entity: binary_sensor.kitchen_tidy
+  name: Kitchen
+  icon: mdi:home
+  show_state: true
+  show_last_changed: true
+  sub_button:
+    - name: Check
+      icon: mdi:camera-iris
+      show_background: false
+      tap_action:
+        action: call-service
+        service: cleanme.request_check
+        service_data:
+          zone: Kitchen
+    - name: Done
+      icon: mdi:check-bold
+      show_background: false
+      tap_action:
+        action: call-service
+        service: cleanme.clear_tasks
+        service_data:
+          zone: Kitchen
 ```
 
 ### Regenerating Cards:
@@ -128,7 +134,7 @@ Then copy the updated cards from `/config/dashboards/cleanme.yaml`.
      dashboards:
        cleanme-dashboard:
          mode: yaml
-         title: CleanMe Tidy Tracker
+         title: CleanMe
          icon: mdi:broom
          show_in_sidebar: true
          filename: dashboards/cleanme.yaml
@@ -170,19 +176,14 @@ Then copy the updated cards from `/config/dashboards/cleanme.yaml`.
 
 ## 🎨 Required Custom Cards
 
-All methods require these HACS custom cards:
+All methods require this HACS custom card:
 
-### 1. Mushroom Cards
-- **HACS**: Search "Mushroom"
-- **GitHub**: `piitaya/lovelace-mushroom`
+### Bubble Card
+- **HACS**: Search "Bubble Card"
+- **GitHub**: `Clooos/Bubble-Card`
 - **Install**: HACS → Frontend → Explore & Download Repositories
 
-### 2. Card Mod
-- **HACS**: Search "Card Mod"
-- **GitHub**: `thomasloven/lovelace-card-mod`
-- **Install**: HACS → Frontend → Explore & Download Repositories
-
-**After installing custom cards:**
+**After installing custom card:**
 1. Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
 2. Refresh Home Assistant
 3. Check cards appear correctly
@@ -230,10 +231,9 @@ logger:
 4. Try manually regenerating: `service: cleanme.regenerate_dashboard`
 
 ### Cards show as "Custom element doesn't exist"
-1. Install Mushroom Cards via HACS
-2. Install Card Mod via HACS
-3. Clear browser cache (Ctrl+Shift+R)
-4. Restart Home Assistant
+1. Install Bubble Card via HACS
+2. Clear browser cache (Ctrl+Shift+R)
+3. Restart Home Assistant
 
 ### Cards show old data
 1. Check entity names match your zones

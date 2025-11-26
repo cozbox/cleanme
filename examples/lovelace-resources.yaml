@@ -7,12 +7,8 @@
 lovelace:
   mode: yaml
   resources:
-    # Mushroom Cards - Required for CleanMe dashboard
-    - url: /hacsfiles/lovelace-mushroom/mushroom.js
-      type: module
-    
-    # Card Mod - Required for custom styling
-    - url: /hacsfiles/lovelace-card-mod/card-mod.js
+    # Bubble Card - Required for CleanMe dashboard
+    - url: /hacsfiles/bubble-card/bubble-card.js
       type: module
 
 # METHOD 2: If you're using Storage mode (UI mode)
@@ -20,14 +16,11 @@ lovelace:
 # 1. Go to Settings → Dashboards
 # 2. Click the three dots menu (⋮) in the top right
 # 3. Select "Resources"
-# 4. Add each resource:
-#    - URL: /hacsfiles/lovelace-mushroom/mushroom.js
-#      Type: JavaScript Module
-#    - URL: /hacsfiles/lovelace-card-mod/card-mod.js
+# 4. Add the resource:
+#    - URL: /hacsfiles/bubble-card/bubble-card.js
 #      Type: JavaScript Module
 
-# NOTE: Install these custom cards via HACS first:
-# - Mushroom Cards: Search "Mushroom" in HACS → Frontend
-# - Card Mod: Search "Card Mod" in HACS → Frontend
+# NOTE: Install Bubble Card via HACS first:
+# - Bubble Card: Search "Bubble Card" in HACS → Frontend
 
 # After adding resources, clear browser cache and reload Home Assistant
