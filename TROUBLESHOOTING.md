@@ -13,20 +13,19 @@ Use this checklist to diagnose and fix dashboard issues.
 
 ---
 
-### 2. Custom Cards Installed?
-- [ ] Mushroom Cards installed from HACS
-- [ ] Card Mod installed from HACS
-- [ ] Home Assistant restarted after installing cards
+### 2. Custom Card Installed?
+- [ ] Bubble Card installed from HACS
+- [ ] Home Assistant restarted after installing card
 - [ ] Browser cache cleared (Ctrl+Shift+R or Cmd+Shift+R)
 
 **How to verify**: 
 1. Go to HACS → Frontend
-2. Search for "Mushroom" and "Card Mod"
-3. Both should show "Installed"
+2. Search for "Bubble Card"
+3. Should show "Installed"
 
 **Install if missing**:
 1. HACS → Frontend → Explore & Download Repositories
-2. Search and install: "Mushroom" and "Card Mod"
+2. Search and install: "Bubble Card"
 3. Restart Home Assistant
 
 ---
@@ -68,16 +67,16 @@ Determine which dashboard mode you're using:
 
 ---
 
-### Issue 2: "Custom element doesn't exist: custom:mushroom-template-card"
+### Issue 2: "Custom element doesn't exist: custom:bubble-card"
 
-**Problem**: Mushroom Cards not installed or not loaded
+**Problem**: Bubble Card not installed or not loaded
 
 **Solution**:
-1. [ ] Install Mushroom Cards via HACS
+1. [ ] Install Bubble Card via HACS
 2. [ ] Restart Home Assistant
 3. [ ] Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
 4. [ ] Check resources loaded: Settings → Dashboards → Resources
-5. [ ] Should see: `/hacsfiles/lovelace-mushroom/mushroom.js`
+5. [ ] Should see: `/hacsfiles/bubble-card/bubble-card.js`
 
 **Alternative**: Use basic dashboard without custom cards:
 ```yaml
@@ -231,23 +230,33 @@ entities:
     name: Last Check
 ```
 
-### Option B: Mushroom Card (Requires Custom Cards)
+### Option B: Bubble Card (Requires Custom Cards)
 ```yaml
-type: custom:mushroom-template-card
-primary: 🧹 Kitchen
-secondary: "{{ state_attr('sensor.kitchen_tasks', 'comment') }}"
-icon: >
-  {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-  mdi:check-circle
-  {% else %}
-  mdi:alert-circle
-  {% endif %}
-icon_color: >
-  {% if is_state('binary_sensor.kitchen_tidy', 'on') %}
-  green
-  {% else %}
-  red
-  {% endif %}
+type: custom:bubble-card
+card_type: button
+entity: binary_sensor.kitchen_tidy
+name: Kitchen
+icon: mdi:home
+show_state: true
+show_last_changed: true
+sub_button:
+  - name: Check
+    icon: mdi:camera-iris
+    show_background: false
+    tap_action:
+      action: call-service
+      service: cleanme.request_check
+      service_data:
+        zone: Kitchen
+  - name: Done
+    icon: mdi:check-bold
+    show_background: false
+    tap_action:
+      action: call-service
+      service: cleanme.clear_tasks
+      service_data:
+        zone: Kitchen
+```
 tap_action:
   action: more-info
 ```
@@ -275,7 +284,7 @@ tap_action:
 ---
 
 **Most issues are resolved by:**
-1. ✅ Installing custom cards (Mushroom + Card Mod)
+1. ✅ Installing Bubble Card
 2. ✅ Restarting Home Assistant
 3. ✅ Clearing browser cache
 4. ✅ Running `cleanme.regenerate_dashboard` service

@@ -27,6 +27,10 @@ def test_service_and_attribute_names_are_non_empty():
         const.SERVICE_SNOOZE_ZONE,
         const.SERVICE_CLEAR_TASKS,
         const.SERVICE_ADD_ZONE,
+        const.SERVICE_MARK_CLEAN,
+        const.SERVICE_UNSNOOZE,
+        const.SERVICE_CHECK_ALL,
+        const.SERVICE_SET_PRIORITY,
     ]
     attribute_names = [
         const.ATTR_TASKS,
@@ -35,6 +39,10 @@ def test_service_and_attribute_names_are_non_empty():
         const.ATTR_PERSONALITY,
         const.ATTR_PICKINESS,
         const.ATTR_CAMERA_ENTITY,
+        const.ATTR_LAST_CLEANED,
+        const.ATTR_CLEAN_STREAK,
+        const.ATTR_TOTAL_CLEANS,
+        const.ATTR_MESSINESS_SCORE,
     ]
 
     assert all(service_names), "All service names should be defined"
@@ -44,10 +52,35 @@ def test_service_and_attribute_names_are_non_empty():
 def test_personality_options_cover_personalities():
     const = load_const_module()
     for personality in [
-        const.PERSONALITY_CHILL,
-        const.PERSONALITY_THOROUGH,
+        const.PERSONALITY_FRIENDLY,
+        const.PERSONALITY_SASSY,
         const.PERSONALITY_STRICT,
-        const.PERSONALITY_SARCASTIC,
-        const.PERSONALITY_PROFESSIONAL,
+        const.PERSONALITY_ZEN,
+        const.PERSONALITY_BRITISH_BUTLER,
+        const.PERSONALITY_GAMER,
+        const.PERSONALITY_MOM,
+        const.PERSONALITY_PIRATE,
     ]:
         assert personality in const.PERSONALITY_OPTIONS
+
+
+def test_ai_personalities_have_system_prompts():
+    const = load_const_module()
+    for key, config in const.AI_PERSONALITIES.items():
+        assert "name" in config, f"AI personality '{key}' should have a name"
+        assert "system_prompt" in config, f"AI personality '{key}' should have a system_prompt"
+        assert len(config["system_prompt"]) > 100, f"AI personality '{key}' system_prompt should be detailed"
+
+
+def test_priority_options_defined():
+    const = load_const_module()
+    assert const.PRIORITY_LOW in const.PRIORITY_OPTIONS
+    assert const.PRIORITY_MEDIUM in const.PRIORITY_OPTIONS
+    assert const.PRIORITY_HIGH in const.PRIORITY_OPTIONS
+
+
+def test_platforms_include_all_entity_types():
+    const = load_const_module()
+    expected_platforms = ["sensor", "binary_sensor", "button", "number", "select"]
+    for platform in expected_platforms:
+        assert platform in const.PLATFORMS, f"Platform '{platform}' should be in PLATFORMS"

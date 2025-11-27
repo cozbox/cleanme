@@ -1,340 +1,391 @@
-"""Auto-generate Lovelace dashboard configuration for CleanMe zones.
+"""Dashboard generator for TwinSync Spot.
 
-NOTE: Dashboard cards use custom:mushroom-template-card which requires:
-- Mushroom Cards (HACS: piitaya/lovelace-mushroom)
-- Card Mod (HACS: thomasloven/lovelace-card-mod)
-
-These dependencies are documented in README.md and should be installed
-separately by users who want to use the dashboard features.
+Generates a Lovelace dashboard that matches the mockup:
+┌─────────────────────────────────────────────┐
+│ 📍 My Work Desk           ⚠ Needs Attention │
+│─────────────────────────────────────────────│
+│ To sort:                                    │
+│ • Coffee mug on left side (again!)          │
+│ • Papers by keyboard                        │
+│                                             │
+│ Looking good:                               │
+│ • Laptop on stand ✓                         │
+│ • Cables tidy ✓                             │
+│─────────────────────────────────────────────│
+│ That mug's been there 4 days now.           │
+│─────────────────────────────────────────────│
+│ [📷 Check]  [✓ I've Reset It]  [💤 Later]   │
+│                                             │
+│ 🔥 Streak: 0 days (best: 5)                 │
+└─────────────────────────────────────────────┘
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import logging
+from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 
-# Dashboard constants
-DASHBOARD_TITLE = "🏠 Tidy Tracker"
-DASHBOARD_ICON = "mdi:broom"
-DASHBOARD_PATH = "cleanme"
-DASHBOARD_BADGES: List[Any] = []
+_LOGGER = logging.getLogger(__name__)
+
+DASHBOARD_TITLE = "TwinSync Spot"
+DASHBOARD_ICON = "mdi:map-marker-check"
+DASHBOARD_PATH = "twinsync-spot"
 
 
-def generate_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
-    """
-    Generate a complete Lovelace dashboard configuration for all CleanMe zones.
+def generate_dashboard_config(hass: HomeAssistant) -> dict[str, Any]:
+    """Generate complete Lovelace dashboard config."""
+    spots_data = hass.data.get(DOMAIN, {})
 
-    Returns a dashboard configuration dict that can be used to create
-    a dashboard in Home Assistant.
-    """
-    zones_data = hass.data.get(DOMAIN, {})
+    # Get all spot names
+    spot_names = []
+    for spot in spots_data.values():
+        if hasattr(spot, "name"):
+            spot_names.append(spot.name)
 
-    # Get all zone names
-    # Note: hass.data[DOMAIN] contains both CleanMeZone objects and metadata keys
-    # (like "dashboard_config", "dashboard_panel_registered"), so we use hasattr
-    # to filter for actual zone objects that have a 'name' attribute
-    zone_names = []
-    for zone in zones_data.values():
-        if hasattr(zone, 'name'):
-            zone_names.append(zone.name)
-
-    # Build cards for each zone
     cards = []
 
-    for zone_name in zone_names:
-        zone_card = _create_zone_card(zone_name)
-        cards.append(zone_card)
+    # Header
+    cards.append(_create_header())
 
-    # Add "Add Zone" button card at the end
-    add_zone_card = _create_add_zone_card()
-    cards.append(add_zone_card)
+    # Status overview
+    cards.append(_create_status_overview())
 
-    # Build the complete dashboard configuration
-    dashboard_config = {
+    # Alert section (conditional)
+    cards.append(_create_alert_section())
+
+    # Spot cards
+    if spot_names:
+        for spot_name in spot_names:
+            cards.append(_create_spot_card(spot_name))
+    else:
+        cards.append(_create_no_spots_card())
+
+    # Quick actions
+    cards.append(_create_quick_actions())
+
+    return {
         "title": DASHBOARD_TITLE,
         "icon": DASHBOARD_ICON,
         "path": DASHBOARD_PATH,
-        "badges": DASHBOARD_BADGES,
+        "badges": [],
         "cards": cards,
     }
 
-    return dashboard_config
 
-
-def _create_zone_card(zone_name: str) -> Dict[str, Any]:
-    """Create a card for a single zone."""
-    # Sanitize zone name for entity IDs
-    zone_id = zone_name.lower().replace(" ", "_")
-
+def _create_header() -> dict[str, Any]:
+    """Create dashboard header."""
     return {
-        "type": "custom:mushroom-template-card",
-        "primary": f"🧹 {zone_name}",
-        "secondary": "{{ state_attr('sensor." + zone_id + "_tasks', 'comment') }}",
-        "icon": "{% if is_state('binary_sensor." + zone_id + "_tidy', 'on') %}mdi:check-circle{% else %}mdi:alert-circle{% endif %}",
-        "icon_color": "{% if is_state('binary_sensor." + zone_id + "_tidy', 'on') %}green{% else %}red{% endif %}",
-        "badge_icon": "mdi:format-list-checkbox",
-        "badge_color": "{% if states('sensor." + zone_id + "_tasks') | int > 0 %}orange{% else %}green{% endif %}",
-        "tap_action": {
-            "action": "more-info",
-        },
-        "hold_action": {
-            "action": "none",
-        },
-        "card_mod": {
-            "style": """
-                ha-card {
-                  border-left: 4px solid {% if is_state('binary_sensor.""" + zone_id + """_tidy', 'on') %}var(--success-color){% else %}var(--error-color){% endif %};
-                }
-            """
+        "type": "markdown",
+        "content": "# 📍 TwinSync Spot\n*Does this match YOUR definition?*",
+    }
+
+
+def _create_status_overview() -> dict[str, Any]:
+    """Create status overview row."""
+    return {
+        "type": "horizontal-stack",
+        "cards": [
+            {
+                "type": "entity",
+                "entity": "sensor.twinsync_total_spots",
+                "name": "Spots",
+                "icon": "mdi:map-marker-multiple",
+            },
+            {
+                "type": "entity",
+                "entity": "sensor.twinsync_spots_needing_attention",
+                "name": "Need Attention",
+                "icon": "mdi:alert-circle",
+            },
+            {
+                "type": "entity",
+                "entity": "binary_sensor.twinsync_all_sorted",
+                "name": "All Sorted",
+                "icon": "mdi:check-circle",
+            },
+        ],
+    }
+
+
+def _create_alert_section() -> dict[str, Any]:
+    """Create conditional alert for spots needing attention."""
+    return {
+        "type": "conditional",
+        "conditions": [
+            {
+                "entity": "sensor.twinsync_spots_needing_attention",
+                "state_not": "0",
+            }
+        ],
+        "card": {
+            "type": "markdown",
+            "content": (
+                "{% set spots = state_attr('sensor.twinsync_spots_needing_attention', 'spots') %}\n"
+                "{% if spots %}\n"
+                "## ⚠️ Needs Attention\n"
+                "{% for spot in spots %}\n"
+                "- **{{ spot }}**\n"
+                "{% endfor %}\n"
+                "{% endif %}"
+            ),
         },
     }
 
 
-def _create_zone_details_card(zone_name: str) -> Dict[str, Any]:
-    """Create a detailed card with tasks and action buttons for a zone."""
-    zone_id = zone_name.lower().replace(" ", "_")
+def _create_spot_card(spot_name: str) -> dict[str, Any]:
+    """Create a complete card for one spot, matching the mockup."""
+    spot_slug = slugify(spot_name)
 
     return {
         "type": "vertical-stack",
         "cards": [
-            # Status header
+            # Header with status
             {
-                "type": "custom:mushroom-template-card",
-                "primary": f"{zone_name}",
-                "secondary": "{{ state_attr('sensor." + zone_id + "_tasks', 'comment') or 'No recent check' }}",
-                "icon": "{% if is_state('binary_sensor." + zone_id + "_tidy', 'on') %}mdi:check-circle{% else %}mdi:alert-circle{% endif %}",
-                "icon_color": "{% if is_state('binary_sensor." + zone_id + "_tidy', 'on') %}green{% else %}red{% endif %}",
-                "badge_icon": "{% if states('sensor." + zone_id + "_tasks') | int > 0 %}mdi:format-list-checks{% else %}mdi:check{% endif %}",
-                "badge_color": "{% if states('sensor." + zone_id + "_tasks') | int > 0 %}orange{% else %}green{% endif %}",
+                "type": "markdown",
+                "content": (
+                    f"## 📍 {spot_name}\n"
+                    f"{{% if is_state('binary_sensor.{spot_slug}_sorted', 'on') %}}"
+                    "✅ **Sorted**"
+                    "{% else %}"
+                    "⚠️ **Needs Attention**"
+                    "{% endif %}"
+                ),
             },
-            # Task list (conditional)
+            # To sort section
             {
                 "type": "conditional",
                 "conditions": [
                     {
-                        "entity": f"sensor.{zone_id}_tasks",
+                        "entity": f"sensor.{spot_slug}_to_sort",
                         "state_not": "0",
                     }
                 ],
                 "card": {
                     "type": "markdown",
-                    "content": """
-{% set tasks = state_attr('sensor.""" + zone_id + """_tasks', 'tasks') %}
-{% if tasks %}
-**Tasks to complete:**
-{% for task in tasks %}
-- {{ task }}
-{% endfor %}
-{% endif %}
-                    """,
+                    "content": (
+                        f"{{% set items = state_attr('sensor.{spot_slug}_to_sort', 'to_sort') %}}\n"
+                        "{% if items %}\n"
+                        "### To sort:\n"
+                        "{% for item in items %}\n"
+                        "- **{{ item.item }}**"
+                        "{% if item.location %} *({{ item.location }})*{% endif %}"
+                        "{% if item.recurring %} 🔄{% endif %}\n"
+                        "{% endfor %}\n"
+                        "{% endif %}"
+                    ),
                 },
             },
-            # Metadata
+            # Looking good section
             {
-                "type": "entities",
-                "entities": [
+                "type": "conditional",
+                "conditions": [
                     {
-                        "entity": f"sensor.{zone_id}_last_check",
-                        "name": "Last checked",
+                        "entity": f"sensor.{spot_slug}_looking_good",
+                        "state_not": "0",
+                    }
+                ],
+                "card": {
+                    "type": "markdown",
+                    "content": (
+                        f"{{% set items = state_attr('sensor.{spot_slug}_looking_good', 'looking_good') %}}\n"
+                        "{% if items %}\n"
+                        "### Looking good:\n"
+                        "{% for item in items %}\n"
+                        "- {{ item }} ✓\n"
+                        "{% endfor %}\n"
+                        "{% endif %}"
+                    ),
+                },
+            },
+            # Notes section
+            {
+                "type": "conditional",
+                "conditions": [
+                    {
+                        "entity": f"sensor.{spot_slug}_notes",
+                        "state_not": "No notes yet",
                     },
                     {
-                        "entity": f"sensor.{zone_id}_tasks",
-                        "name": "Task count",
+                        "entity": f"sensor.{spot_slug}_notes",
+                        "state_not": "unavailable",
                     },
                 ],
-                "show_header_toggle": False,
+                "card": {
+                    "type": "markdown",
+                    "content": (
+                        f"{{% set main = state_attr('sensor.{spot_slug}_notes', 'main') %}}\n"
+                        f"{{% set pattern = state_attr('sensor.{spot_slug}_notes', 'pattern') %}}\n"
+                        "{% if main %}\n"
+                        "---\n"
+                        "*{{ main }}*\n"
+                        "{% if pattern %}\n"
+                        "\n📊 {{ pattern }}\n"
+                        "{% endif %}\n"
+                        "{% endif %}"
+                    ),
+                },
             },
-            # Action buttons
+            # Action buttons with TEXT LABELS (not just icons!)
             {
                 "type": "horizontal-stack",
                 "cards": [
                     {
-                        "type": "custom:mushroom-template-card",
-                        "primary": "Check",
-                        "icon": "mdi:camera",
-                        "icon_color": "blue",
+                        "type": "button",
+                        "name": "📷 Check",
                         "tap_action": {
                             "action": "call-service",
-                            "service": "cleanme.request_check",
-                            "service_data": {
-                                "zone": zone_name,
-                            },
+                            "service": "cleanme.check",
+                            "data": {"spot": spot_name},
                         },
-                        "layout": "vertical",
+                        "show_icon": False,
+                        "show_name": True,
                     },
                     {
-                        "type": "custom:mushroom-template-card",
-                        "primary": "Done",
-                        "icon": "mdi:check",
-                        "icon_color": "green",
+                        "type": "button",
+                        "name": "✓ Reset",
                         "tap_action": {
                             "action": "call-service",
-                            "service": "cleanme.clear_tasks",
-                            "service_data": {
-                                "zone": zone_name,
-                            },
+                            "service": "cleanme.reset",
+                            "data": {"spot": spot_name},
                         },
-                        "layout": "vertical",
+                        "show_icon": False,
+                        "show_name": True,
                     },
                     {
-                        "type": "custom:mushroom-template-card",
-                        "primary": "Snooze",
-                        "icon": "mdi:sleep",
-                        "icon_color": "orange",
+                        "type": "button",
+                        "name": "💤 Later",
                         "tap_action": {
                             "action": "call-service",
-                            "service": "cleanme.snooze_zone",
-                            "service_data": {
-                                "zone": zone_name,
-                                "duration_minutes": 60,
-                            },
+                            "service": "cleanme.snooze",
+                            "data": {"spot": spot_name, "duration_minutes": 1440},
                         },
-                        "layout": "vertical",
+                        "show_icon": False,
+                        "show_name": True,
                     },
                 ],
             },
+            # Streak info
+            {
+                "type": "markdown",
+                "content": (
+                    f"{{% set current = states('sensor.{spot_slug}_streak') | int %}}\n"
+                    f"{{% set best = state_attr('sensor.{spot_slug}_streak', 'longest_streak') | int %}}\n"
+                    "🔥 **Streak:** {{ current }} day{% if current != 1 %}s{% endif %}"
+                    "{% if best > current %} *(best: {{ best }})*{% endif %}"
+                ),
+            },
         ],
     }
 
 
-def _create_add_zone_card() -> Dict[str, Any]:
-    """Create the 'Add Zone' button card."""
+def _create_no_spots_card() -> dict[str, Any]:
+    """Card shown when no spots are configured."""
     return {
-        "type": "custom:mushroom-template-card",
-        "primary": "+ Add Another Zone",
-        "secondary": "Configure a new room to track",
-        "icon": "mdi:plus-circle",
-        "icon_color": "blue",
-        "tap_action": {
-            "action": "navigate",
-            "navigation_path": "/config/integrations/integration/cleanme",
-        },
-        "card_mod": {
-            "style": """
-                ha-card {
-                  border: 2px dashed var(--primary-color);
-                  opacity: 0.8;
-                }
-            """
-        },
+        "type": "markdown",
+        "content": (
+            "## 👋 Welcome to TwinSync Spot!\n\n"
+            "No spots configured yet.\n\n"
+            "1. Go to **Settings** → **Devices & Services**\n"
+            "2. Click **Add Integration**\n"
+            "3. Search for **CleanMe**\n"
+            "4. Define your first spot!\n"
+        ),
     }
 
 
-def create_simple_cards_list(hass: HomeAssistant) -> List[Dict[str, Any]]:
-    """
-    Create a simple list of cards for all zones.
-
-    This is useful for users who want to add CleanMe cards to their
-    existing dashboards rather than using the auto-generated one.
-    """
-    zones_data = hass.data.get(DOMAIN, {})
-
-    cards = []
-
-    for zone in zones_data.values():
-        if hasattr(zone, 'name'):
-            card = _create_zone_details_card(zone.name)
-            cards.append(card)
-
-    return cards
-
-
-def get_required_custom_cards() -> List[str]:
-    """
-    Return list of custom cards required for the dashboard.
-
-    These should be installed via HACS for the dashboard to work properly.
-    """
-    return [
-        "mushroom",  # custom:mushroom-template-card
-        "card-mod",  # For styling
-    ]
-
-
-def create_basic_entities_card(zone_name: str) -> Dict[str, Any]:
-    """
-    Create a basic entities card that doesn't require custom cards.
-    
-    This is a fallback for users who haven't installed Mushroom cards yet.
-    """
-    zone_id = zone_name.lower().replace(" ", "_")
-    
+def _create_quick_actions() -> dict[str, Any]:
+    """Create quick action buttons at bottom."""
     return {
-        "type": "entities",
-        "title": f"🧹 {zone_name}",
-        "entities": [
-            {
-                "entity": f"binary_sensor.{zone_id}_tidy",
-                "name": "Status",
-            },
-            {
-                "entity": f"sensor.{zone_id}_tasks",
-                "name": "Task Count",
-            },
-            {
-                "entity": f"sensor.{zone_id}_last_check",
-                "name": "Last Check",
-            },
+        "type": "horizontal-stack",
+        "cards": [
             {
                 "type": "button",
-                "name": "Check Now",
-                "action_name": "Check",
+                "name": "Check All",
+                "icon": "mdi:camera-burst",
                 "tap_action": {
                     "action": "call-service",
-                    "service": "cleanme.request_check",
-                    "service_data": {
-                        "zone": zone_name,
-                    },
+                    "service": "cleanme.check_all",
                 },
             },
             {
                 "type": "button",
-                "name": "Mark Done",
-                "action_name": "Done",
+                "name": "Add Spot",
+                "icon": "mdi:plus-circle",
+                "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/config/integrations/integration/cleanme",
+                },
+            },
+            {
+                "type": "button",
+                "name": "Refresh Dashboard",
+                "icon": "mdi:refresh",
                 "tap_action": {
                     "action": "call-service",
-                    "service": "cleanme.clear_tasks",
-                    "service_data": {
-                        "zone": zone_name,
-                    },
+                    "service": "cleanme.regenerate_dashboard",
                 },
             },
         ],
     }
 
 
-def generate_basic_dashboard_config(hass: HomeAssistant) -> Dict[str, Any]:
+def generate_basic_dashboard_config(hass: HomeAssistant) -> dict[str, Any]:
+    """Generate basic dashboard without custom cards.
+
+    Fallback for users who haven't installed custom cards.
     """
-    Generate a basic dashboard configuration without custom cards.
-    
-    This is a fallback for users who haven't installed Mushroom cards.
-    """
-    zones_data = hass.data.get(DOMAIN, {})
-    
-    # Get all zone names
-    # Note: hass.data[DOMAIN] contains both CleanMeZone objects and metadata keys,
-    # so we use hasattr to filter for actual zone objects
-    zone_names = []
-    for zone in zones_data.values():
-        if hasattr(zone, 'name'):
-            zone_names.append(zone.name)
-    
-    # Build basic cards for each zone
+    spots_data = hass.data.get(DOMAIN, {})
+
+    spot_names = []
+    for spot in spots_data.values():
+        if hasattr(spot, "name"):
+            spot_names.append(spot.name)
+
     cards = []
-    
-    for zone_name in zone_names:
-        zone_card = create_basic_entities_card(zone_name)
-        cards.append(zone_card)
-    
-    # Build the complete dashboard configuration
-    dashboard_config = {
+
+    # Simple header
+    cards.append({
+        "type": "markdown",
+        "content": "# 📍 TwinSync Spot",
+    })
+
+    # Spot cards
+    for spot_name in spot_names:
+        spot_slug = slugify(spot_name)
+        cards.append({
+            "type": "entities",
+            "title": f"📍 {spot_name}",
+            "entities": [
+                {"entity": f"binary_sensor.{spot_slug}_sorted", "name": "Status"},
+                {"entity": f"sensor.{spot_slug}_to_sort", "name": "To Sort"},
+                {"entity": f"sensor.{spot_slug}_looking_good", "name": "Looking Good"},
+                {"entity": f"sensor.{spot_slug}_streak", "name": "Streak"},
+                {"entity": f"sensor.{spot_slug}_last_check", "name": "Last Check"},
+            ],
+        })
+
+    return {
         "title": DASHBOARD_TITLE,
         "icon": DASHBOARD_ICON,
         "path": DASHBOARD_PATH,
-        "badges": DASHBOARD_BADGES,
+        "badges": [],
         "cards": cards,
     }
-    
-    return dashboard_config
+
+
+def get_required_custom_cards() -> list[str]:
+    """Return list of required custom cards.
+
+    Actually, we use standard cards only now! No custom cards required.
+    """
+    return []  # We only use standard HA cards
+
+
+def create_simple_cards_list(hass: HomeAssistant) -> list[dict[str, Any]]:
+    """Create simple list of cards for manual dashboard integration."""
+    config = generate_dashboard_config(hass)
+    return config.get("cards", [])
